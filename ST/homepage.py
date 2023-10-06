@@ -9,6 +9,7 @@ import wx.adv
 import pandas as pd
 import wx.grid
 import datetime
+from common import *
 
 # data file used for analysis
 # df = pd.read_csv(r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv")
@@ -62,15 +63,17 @@ class HomePage(wx.Panel):
         filter_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # code to load the data file
-        self.df = self.load_file()
+        self.df = load_file()
 
         # code for from date
         self.from_text = wx.StaticText(self, wx.ID_ANY, u"From", wx.DefaultPosition, wx.DefaultSize, 10)
         self.from_text.Wrap(-1)
         filter_sizer.Add(self.from_text, 0, wx.TOP|wx.BOTTOM, 15)
 
-        self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
-        self.date_field1.SetRange(datetime.datetime(1900,1,1), datetime.datetime(2017, 12, 31))
+        # self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
+        # self.date_field1.SetRange(datetime.datetime(1900,1,1), datetime.datetime(2017, 12, 31))
+        # self.date_field1.Bind(wx.adv.EVT_DATE_CHANGED, self.OnFromDateSelected)
+        self.date_field1 = set_from_date(self)
         self.date_field1.Bind(wx.adv.EVT_DATE_CHANGED, self.OnFromDateSelected)
         filter_sizer.Add(self.date_field1, 0, wx.ALL, 10)
 
@@ -141,12 +144,6 @@ class HomePage(wx.Panel):
         self.data_grid.EnableEditing(False)
         self.sizer.Add(self.data_grid, 0, wx.ALL | wx.EXPAND | wx.GROW, 15)
         self.SetSizer(self.sizer, wx.EXPAND | wx.GROW)
-
-    def load_file(self):
-        # data file used for analysis
-        self.df = pd.read_csv(r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv")
-
-        return self.df
 
     def OnResetFilter(self, e):
         """

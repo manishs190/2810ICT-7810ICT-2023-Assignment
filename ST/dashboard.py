@@ -15,9 +15,9 @@ matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 import matplotlib.pyplot as plt
 from viewdetail import ViewDetailChart
-
+from common import *
 # data file used for analysis
-df = pd.read_csv(r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv")
+# df = pd.read_csv(r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv")
 
 class Dashboard(wx.Panel):
     """
@@ -57,13 +57,16 @@ class Dashboard(wx.Panel):
         # code for filter section
         filter_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
+        self.df = load_file()
+
         # code for from date field
         self.from_text = wx.StaticText(self, wx.ID_ANY, u"From", wx.DefaultPosition, wx.DefaultSize, 10)
         self.from_text.Wrap(-1)
         filter_sizer.Add(self.from_text, 0, wx.TOP | wx.BOTTOM, 15)
 
-        self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
-        self.date_field1.SetRange(datetime.datetime(1900, 1, 1), datetime.datetime(2017, 12, 31))
+        # self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
+        # self.date_field1.SetRange(datetime.datetime(1900, 1, 1), datetime.datetime(2017, 12, 31))
+        self.date_field1 = set_from_date(self)
         self.date_field1.Bind(wx.adv.EVT_DATE_CHANGED, self.OnFromDateSelected)
         filter_sizer.Add(self.date_field1, 0, wx.ALL, 10)
 
@@ -121,7 +124,7 @@ class Dashboard(wx.Panel):
 
         # Plot 1
         # data grouped according to suburbs and counted based on violation code
-        self.grouped_suburb_df = pd.DataFrame(df.groupby("BORO")['VIOLATION CODE'].count())
+        self.grouped_suburb_df = pd.DataFrame(self.df.groupby("BORO")['VIOLATION CODE'].count())
         self.grouped_suburb = self.grouped_suburb_df.unstack()
 
         self.unique_suburb = df['BORO'].unique()
@@ -132,7 +135,7 @@ class Dashboard(wx.Panel):
 
         # Plot 2
         # data grouped based on cuisine and counted is generated on violation code
-        self.grouped_cuisine_df = pd.DataFrame(df.groupby("CUISINE DESCRIPTION")['VIOLATION CODE'].count())
+        self.grouped_cuisine_df = pd.DataFrame(self.df.groupby("CUISINE DESCRIPTION")['VIOLATION CODE'].count())
         self.grouped_cuisine = self.grouped_cuisine_df.unstack()
         short_df = self.grouped_cuisine.head(10)
 
@@ -144,7 +147,7 @@ class Dashboard(wx.Panel):
 
         # Plot 3
         # mapping of violation codes to animals
-        filtered_df = df[df['VIOLATION CODE'].isin(['04K', '04L', '04M', '04N', '04O'])].copy()
+        filtered_df = self.df[self.df['VIOLATION CODE'].isin(['04K', '04L', '04M', '04N', '04O'])].copy()
         violation_code_dict = {'04K': 'Rats', '04L': 'Mice', '04M': 'Roach', '04N': 'Flies', '04O': 'Other live animals'}
         filtered_df['ANIMALS'] = filtered_df['VIOLATION CODE'].map(violation_code_dict)
 
@@ -216,7 +219,7 @@ class Dashboard(wx.Panel):
         self.max_date_limit = self.date_field2.GetValue()
 
         # the pandas serie is converted to datetime
-        self.datetime_converted_1 = pd.to_datetime(df['INSPECTION DATE'], infer_datetime_format=True)
+        self.datetime_converted_1 = pd.to_datetime(self.df['INSPECTION DATE'], infer_datetime_format=True)
         self.filtered_df_pie = df[self.datetime_converted_1 >= datetime.datetime(self.min_date_limit.year, self.min_date_limit.month + 1, self.min_date_limit.day)]
 
         self.datetime_converted_2 = pd.to_datetime(self.filtered_df_pie['INSPECTION DATE'], infer_datetime_format=True)
