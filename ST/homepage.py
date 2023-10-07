@@ -11,8 +11,10 @@ import wx.grid
 import datetime
 from common import *
 
+filename = "DOHMH_New_York_City_Restaurant_Inspection_Results.csv"
 # data file used for analysis
 # df = pd.read_csv(r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv")
+
 
 class HomePage(wx.Panel):
     """
@@ -63,17 +65,19 @@ class HomePage(wx.Panel):
         filter_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # code to load the data file
-        self.df = load_file()
+        self.df = load_file(filename)
 
         # code for from date
         self.from_text = wx.StaticText(self, wx.ID_ANY, u"From", wx.DefaultPosition, wx.DefaultSize, 10)
         self.from_text.Wrap(-1)
         filter_sizer.Add(self.from_text, 0, wx.TOP|wx.BOTTOM, 15)
 
-        # self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
-        # self.date_field1.SetRange(datetime.datetime(1900,1,1), datetime.datetime(2017, 12, 31))
+        self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
         # self.date_field1.Bind(wx.adv.EVT_DATE_CHANGED, self.OnFromDateSelected)
-        self.date_field1 = set_from_date(self)
+        date_range = get_date_range()
+        valid_range = check_date_range(date_range)
+        if valid_range:
+            self.date_field1.SetRange(date_range[0], date_range[1])
         self.date_field1.Bind(wx.adv.EVT_DATE_CHANGED, self.OnFromDateSelected)
         filter_sizer.Add(self.date_field1, 0, wx.ALL, 10)
 
@@ -94,10 +98,11 @@ class HomePage(wx.Panel):
         btn.Bind(wx.EVT_BUTTON, self.OnDateSelected)
 
         # initialise choice / select field
-        excluded_col_list = ['CAMIS', 'BUILDING', 'ZIPCODE', 'PHONE', 'INSPECTION DATE', 'SCORE', 'GRADE', 'GRADE DATE', 'RECORD DATE']
-        col_list = set(self.df.columns)
-        exclusion_set = set(excluded_col_list)
-        self.choices = sorted(list(col_list - exclusion_set))
+        self.excluded_col_list = ['CAMIS', 'BUILDING', 'ZIPCODE', 'PHONE', 'INSPECTION DATE', 'SCORE', 'GRADE', 'GRADE DATE', 'RECORD DATE']
+        # col_list = set(self.df.columns)
+        # exclusion_set = set(excluded_col_list)
+        # self.choices = sorted(list(col_list - exclusion_set))
+        self.choices = self.get_col_choices(self.excluded_col_list, self.df.columns)
         self.col_choice = wx.ComboBox(self, size = (150, 35), choices=self.choices, value="Select a column")
         self.Bind(wx.EVT_TEXT, self.OnColSelect)
         self.Bind(wx.EVT_COMBOBOX_CLOSEUP, self.OnColSelect)
@@ -199,18 +204,34 @@ class HomePage(wx.Panel):
         """
         self.min_date_limit = self.date_field1.GetValue()
         self.max_date_limit = self.date_field2.GetValue()
+        valid_range = check_date_range([self.min_date_limit, self.max_date_limit])
 
-        # the pandas series is converted to datetime
-        self.datetime_converted_1 = pd.to_datetime(self.df['INSPECTION DATE'], infer_datetime_format=True)
-        self.df_1 = self.df[self.datetime_converted_1 >= datetime.datetime(self.min_date_limit.year, self.min_date_limit.month + 1, self.min_date_limit.day)]
+        if valid_range:
+            # the pandas series is converted to datetime
+            self.datetime_converted_1 = pd.to_datetime(self.df['INSPECTION DATE'], infer_datetime_format=True)
+            self.df_1 = self.df[self.datetime_converted_1 >= datetime.datetime(self.min_date_limit.year, self.min_date_limit.month + 1, self.min_date_limit.day)]
 
-        self.datetime_converted_2 = pd.to_datetime(self.df_1['INSPECTION DATE'], infer_datetime_format=True)
-        self.df_1 = self.df_1[self.datetime_converted_2 <= datetime.datetime(self.max_date_limit.year, self.max_date_limit.month + 1, self.max_date_limit.day)]
+            self.datetime_converted_2 = pd.to_datetime(self.df_1['INSPECTION DATE'], infer_datetime_format=True)
+            self.df_1 = self.df_1[self.datetime_converted_2 <= datetime.datetime(self.max_date_limit.year, self.max_date_limit.month + 1, self.max_date_limit.day)]
 
-        if len(self.df_1) > 0:
-            self.SetDataTable(self.df_1)
+            if len(self.df_1) > 0:
+                self.SetDataTable(self.df_1)
+            else:
+                wx.MessageBox('No data available for the selected date range', 'Info', wx.OK | wx.ICON_INFORMATION)
         else:
-            wx.MessageBox('No data available for the selected date range', 'Info', wx.OK | wx.ICON_INFORMATION)
+            wx.MessageBox('Please choose a valid date range', 'Info', wx.OK | wx.ICON_INFORMATION)
+
+    def get_col_choices(self, excluded_list, all_column_names):
+
+        col_list = set(all_column_names)
+        exclusion_set = set(excluded_list)
+        col_choices = sorted(list(col_list - exclusion_set))
+
+        return col_choices
+
+    def check_column_name(self, column_name, valid_col_choices):
+
+        return column_name in valid_col_choices
 
     def OnColSelect(self, event):
         """
@@ -226,9 +247,10 @@ class HomePage(wx.Panel):
         -------
             None
         """
-        self.chosen_col = self.col_choice.GetValue()
+        self.chosen_col = self.col_choice.GetValue().upper()
 
-        if str(self.chosen_col.upper()) in self.choices:
+        valid_column = self.check_column_name(self.chosen_col, self.choices)
+        if valid_column:
             self.textCtrl.Enable()
         elif len(str(self.chosen_col)) == 0:
             pass

@@ -2,15 +2,26 @@ import pandas as pd
 import wx
 import wx.adv
 import datetime
+import os
 
-def load_file():
-    df = pd.read_csv(r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv")
 
-    return df
+def load_file(filename):
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        return df
+    else:
+        return 'IO_error'
 
-def set_from_date(parent):
-    from_date_field = wx.adv.DatePickerCtrl(parent, style=wx.adv.DP_DROPDOWN)
-    from_date_field.SetRange(datetime.datetime(1900, 1, 1), datetime.datetime(2017, 12, 31))
+def get_date_range():
+    date1 = datetime.datetime(1900, 1, 1)
+    date2 = datetime.datetime(2017, 12, 31)
 
-    return from_date_field
+    return [date1, date2]
 
+def check_date_range(date):
+
+    is_valid = False
+    if date[0] < date[1]:
+        is_valid = True
+    print(is_valid)
+    return is_valid

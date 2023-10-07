@@ -18,7 +18,7 @@ from viewdetail import ViewDetailChart
 from common import *
 # data file used for analysis
 # df = pd.read_csv(r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv")
-
+filename = "DOHMH_New_York_City_Restaurant_Inspection_Results.csv"
 class Dashboard(wx.Panel):
     """
     A class for Dashboard page.
@@ -57,16 +57,20 @@ class Dashboard(wx.Panel):
         # code for filter section
         filter_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.df = load_file()
+        self.df = load_file(filename)
 
         # code for from date field
         self.from_text = wx.StaticText(self, wx.ID_ANY, u"From", wx.DefaultPosition, wx.DefaultSize, 10)
         self.from_text.Wrap(-1)
         filter_sizer.Add(self.from_text, 0, wx.TOP | wx.BOTTOM, 15)
 
-        # self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
+        self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
         # self.date_field1.SetRange(datetime.datetime(1900, 1, 1), datetime.datetime(2017, 12, 31))
-        self.date_field1 = set_from_date(self)
+        # self.date_field1 = set_from_date(self)
+        date_range = get_date_range()
+        valid_range = check_date_range(date_range)
+        if valid_range:
+            self.date_field1.SetRange(date_range[0], date_range[1])
         self.date_field1.Bind(wx.adv.EVT_DATE_CHANGED, self.OnFromDateSelected)
         filter_sizer.Add(self.date_field1, 0, wx.ALL, 10)
 
@@ -127,7 +131,7 @@ class Dashboard(wx.Panel):
         self.grouped_suburb_df = pd.DataFrame(self.df.groupby("BORO")['VIOLATION CODE'].count())
         self.grouped_suburb = self.grouped_suburb_df.unstack()
 
-        self.unique_suburb = df['BORO'].unique()
+        self.unique_suburb = self.df['BORO'].unique()
         self.unique_suburb.sort()
         pie_color_list = ["#1a53ff", "#0d88e6", "#00b7c7", "#5ad45a", "#8be04e", "#ebdc78"]
         self.ax1.pie(self.grouped_suburb['VIOLATION CODE'].values, labels = self.unique_suburb, colors = pie_color_list, radius = 2)
@@ -154,7 +158,7 @@ class Dashboard(wx.Panel):
         filtered_df['INSPECTION DATE'] = pd.to_datetime(filtered_df['INSPECTION DATE'])
 
         # group the data by year
-        self.grouped_animals_df = pd.DataFrame(filtered_df.groupby(['ANIMALS', filtered_df['INSPECTION DATE'].dt.year])['INSPECTION DATE'].count())
+        self.grouped_animals_df = pd.DataFrame(filtered_df.groupby(['ANIMALS', filtered_df['INSPECTION DATE']])['INSPECTION DATE'].count())
         self.grouped_animals = self.grouped_animals_df.unstack()
         self.unique_animals = filtered_df['ANIMALS'].unique()
 
@@ -163,13 +167,13 @@ class Dashboard(wx.Panel):
         self.unique_dates = filtered_df['INSPECTION DATE'].dt.year.unique()
         self.unique_dates.sort()
 
-        color_list = [ "#0060ff", "#0080ff", "#009fff", "#00bfff", "#00ffff"]
-        for index in range(len(self.grouped_animals)):
-            ax3.plot(self.unique_dates, self.grouped_animals.iloc[index].fillna(0).to_numpy(),'o-.', color = color_list[index])
-        ax3.legend(self.unique_animals, prop = { "size": 6 }, title = 'Animals')
-        ax3.set_title(u'Distribution of violation related to animals over time period')
-        ax3.set_xlabel('Year')
-        ax3.set_ylabel('Count of violation')
+        # color_list = [ "#0060ff", "#0080ff", "#009fff", "#00bfff", "#00ffff"]
+        # for index in range(len(self.grouped_animals)):
+        #     ax3.plot(self.unique_dates, self.grouped_animals.iloc[index].fillna(0).to_numpy(),'o-.', color = color_list[index])
+        # ax3.legend(self.unique_animals, prop = { "size": 6 }, title = 'Animals')
+        # ax3.set_title(u'Distribution of violation related to animals over time period')
+        # ax3.set_xlabel('Year')
+        # ax3.set_ylabel('Count of violation')
 
         # Plot 4
         # data is grouped based on suburbs and counted is generated based animals

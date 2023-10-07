@@ -8,6 +8,8 @@ import wx
 from homepage import *
 from dashboard import *
 
+
+
 class Visualize(wx.Frame):
     """
     A class for software initialisation.
