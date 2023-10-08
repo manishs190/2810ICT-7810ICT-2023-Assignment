@@ -1,9 +1,6 @@
 from common import *
-import wx
-from homepage import HomePage
-import wx
 import pytest
-import datetime
+
 class TestCommon:
 
     file_names = [' ', r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv",'wrong_file']
@@ -22,5 +19,8 @@ class TestCommon:
         assert dateLst[0] < dateLst[1] and check_date_range(dateLst)
 
 
-
+    def test_filter_data(self):
+        filtered_dates_df = None
+        filtered_dates_df = filter_data('INSPECTION DATE', load_file(r"DOHMH_New_York_City_Restaurant_Inspection_Results.csv"), datetime.datetime(2017, 1, 1), datetime.datetime(2017, 2, 15))
+        assert not filtered_dates_df.empty and isinstance(filtered_dates_df, object)
 

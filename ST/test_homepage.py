@@ -3,8 +3,6 @@ from homepage import HomePage
 import wx
 import pandas as pd
 from common import load_file
-from run_software import Visualize
-
 
 class Test_homepage:
 
@@ -51,6 +49,7 @@ class Test_homepage:
         else:
             out = True
         assert out
+
 
 
 
