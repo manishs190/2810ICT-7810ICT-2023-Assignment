@@ -54,7 +54,7 @@ class ViewDetailChart(wx.Frame):
         self.new_figure_score, axes = plt.subplots(nrows = 1, ncols = 1,constrained_layout = True)
 
         # group data based on cuisine and count based on violation code
-        self.grouped_cuisine_all = pd.DataFrame(df.groupby("CUISINE DESCRIPTION")['VIOLATION CODE'].count())
+        self.grouped_cuisine_all = pd.DataFrame(df.groupby("CUISINE DESCRIPTION")['VIOLATION CODE'].count()).sort_values('VIOLATION CODE')
         self.grouped_cuisine = self.grouped_cuisine_all.unstack()
 
         self.unique_cuisine = df['CUISINE DESCRIPTION'].unique()
@@ -66,8 +66,6 @@ class ViewDetailChart(wx.Frame):
         axes.set_xlabel('Cuisine Description', labelpad=10, fontsize=10)
         axes.set_ylabel('Count of Violation', fontsize=10)
         axes.tick_params(axis='x', labelrotation=90)
-
-
 
         # canvas to add the plot
         self.new_canvas = FigureCanvasWxAgg(self, -1, self.new_figure_score)

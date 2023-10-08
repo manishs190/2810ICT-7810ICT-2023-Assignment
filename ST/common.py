@@ -14,7 +14,7 @@ def load_file(filename):
 
 def get_date_range():
     date1 = datetime.datetime(1900, 1, 1)
-    date2 = datetime.datetime(2017, 12, 31)
+    date2 = datetime.datetime(2017, 8, 29)
 
     return [date1, date2]
 

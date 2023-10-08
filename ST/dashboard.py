@@ -212,27 +212,89 @@ class Dashboard(wx.Panel):
             wx.MessageBox('No data available for the selected date range', 'Info', wx.OK | wx.ICON_INFORMATION)
 
     def groupby_single_column(self, data, grouping_col_name, counting_col_name):
+        """
+        This method will group a dataframe based on one column and count the occurences based on one column.
+        The grouping and the counting columns can be same as well.
 
+        Parameters
+        ----------
+            data: dataframe
+                This param will contain the dataframe on which the operation is to be performed
+            grouping_col_name: str
+                This param will contain the column name on which the grouping has to be done
+            counting_col_name: str
+                This param will contain the column name on which the counting has to done
+
+        Returns
+        -------
+            grouped_df: dataframe
+                This method will return a dataframe which is grouped and counted based on occurences
+        """
         grouped_df = pd.DataFrame(data.groupby(grouping_col_name)[counting_col_name].count())
         grouped_df = grouped_df.unstack()
 
         return grouped_df
 
     def groupby_double_column(self, data, col_1, col_2):
+        """
+        This method will group a dataframe based on two columns and count the occurrences based on one column.
+        The grouping and the counting columns can be same as well.
+
+        Parameters
+        ----------
+            data: dataframe
+                This param will contain the dataframe on which the operation is to be performed
+            col_1: str
+                This param will contain the column name on which the grouping has to be done
+            col_2: str
+                This param will contain the column name on which the grouping and counting has to be done
+
+        Returns
+        -------
+            double_grouped_df: dataframe
+                This method will return a dataframe which is grouped and counted based on occurrences
+        """
         double_grouped_df = pd.DataFrame(data.groupby([col_1, col_2])[col_2].count())
         double_grouped_df = double_grouped_df.unstack()
 
         return double_grouped_df
 
     def plot_pie(self, grouped_data, index):
+        """
+        This method will plot a pie chart
+
+        Parameters
+        ----------
+            grouped_data: dataframe
+                This param will contain a dataframe which comprises the values to plot the pie chart
+            index: str
+                This param will contain a column name for plotting the pie char
+
+        Returns
+        -------
+            ax1: plot
+        """
         pie_color_list = ["#1a53ff", "#0d88e6", "#00b7c7", "#5ad45a", "#8be04e", "#ebdc78"]
-        self.ax1.pie(grouped_data[index].values, labels = grouped_data[index].keys(), colors=pie_color_list, radius=2)
+        self.ax1.pie(grouped_data[index].values, labels = grouped_data[index].keys(), colors=pie_color_list, radius=2, autopct=lambda p: '{:.0f}'.format(p * sum(grouped_data[index].values) / 100))
         self.ax1.set_title(u'Violation Distribution over Suburbs', loc='right')
 
         return self.ax1
 
     def plot_bar(self, data, col_name):
+        """
+        This method will plot a bar chart
 
+        Parameters
+        ----------
+            data: dataframe
+                This param will contain a dataframe which comprises the values to plot the pie chart
+            col_name: str
+                This param will contain a column name for plotting the pie char
+
+        Returns
+        -------
+            ax2: plot
+        """
         self.ax2.bar(data[col_name].keys(), data[col_name].values)
         self.ax2.set_title(u'Violation count per cuisine')
         self.ax2.set_xlabel('Cuisine Description', labelpad=10, fontsize=9)
@@ -241,6 +303,20 @@ class Dashboard(wx.Panel):
 
         return self.ax2
     def plot_line(self, data, data1):
+        """
+        This method will plot a line chart
+
+        Parameters
+        ----------
+            data: dataframe
+                This param will contain a dataframe which comprises the values to plot the pie chart
+            data1: dataframe
+                This param will contain a dataframe from which the unique values are obtained to plot along x-axis
+
+        Returns
+        -------
+            ax3: plot
+        """
         color_list = ["#0060ff", "#0080ff", "#009fff", "#00bfff", "#00ffff"]
         for index in range(len(data)):
             self.ax3.plot(data.iloc[index]['INSPECTION DATE'].keys(), data.iloc[index]['INSPECTION DATE'].fillna(0).to_numpy(), color=color_list[index])
@@ -250,7 +326,22 @@ class Dashboard(wx.Panel):
         self.ax3.set_ylabel('Count of violation')
 
         return self.ax3
+
     def plot_stakced_bar(self, data, data1):
+        """
+        This method will plot a stacked bar chart
+
+        Parameters
+        ----------
+            data: dataframe
+                This param will contain a dataframe which comprises the values to plot the pie chart
+            data1: dataframe
+                This param will contain a dataframe from which the unique values are obtained to plot along x-axis
+
+        Returns
+        -------
+            ax4: plot
+        """
         bar_color_list = ["#363445", "#48446e", "#5e569b", "#776bcd", "#9080ff"]
         data.plot.bar(stacked=True, ax=self.ax4, color=bar_color_list, title='Violation related to animals over suburbs')
         self.ax4.legend(self.get_unique_col_values(data1, 'ANIMALS'), prop={"size": 6}, title='Animals')
@@ -259,11 +350,46 @@ class Dashboard(wx.Panel):
         return self.ax4
 
     def get_unique_col_values(self, data, col_name):
+        """
+        This method will generate the unique values in a column
+
+        Parameters
+        ----------
+            data: dataframe
+                This param will contain dataframe to extract the unique column values
+            col_name: str
+                This param contains the column name for extracting the values
+
+        Returns
+        -------
+            unique_values: list / array
+                This method returns a list of unique values extracted from a column in the provided dataframe
+        """
         unique_values = data[col_name].unique()
 
         return unique_values
 
     def add_new_col(self, data, mapping_dict, col_name, new_col_name):
+        """
+        This method will add a new column based on values passed
+
+        Parameters
+        ----------
+            data: dataframe
+                This param contains the dataframe for which the new column has to be added
+            mapping_dict: dict
+                This param contains a dict of keys and values where keys represent the existing column values
+                and values contain values for the new column
+            col_name: str
+                This param contains column name on which the existing values are to be mapped
+            new_col_name: str
+                This param contains the value for the new column name
+
+        Returns
+        -------
+            mapped_df: dataframe
+                This returns a dataframe with new column
+        """
         mapped_df = data[data[col_name].isin(['04K', '04L', '04M', '04N', '04O'])].copy()
         mapped_df[new_col_name] = mapped_df[col_name].map(mapping_dict)
 

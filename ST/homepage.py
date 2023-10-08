@@ -164,9 +164,11 @@ class HomePage(wx.Panel):
         -------
             None
         """
-        self.date_field1.SetRange(datetime.datetime(1900, 1, 1), datetime.datetime(2017, 12, 31))
+        self.date_field1.SetRange(datetime.datetime(1900, 1, 1), datetime.datetime(2017, 8, 29))
         self.date_field2.Disable()
         self.col_choice.SetValue('')
+        self.textCtrl.SetValue('')
+        self.textCtrl.SetHint('Enter a keyword..')
         self.textCtrl.Disable()
         self.export_data = self.df.copy()
         self.SetDataTable(self.df)
@@ -185,7 +187,7 @@ class HomePage(wx.Panel):
             None
         """
         self.min_date_limit = self.date_field1.GetValue()
-        self.date_field2.SetRange(datetime.datetime(self.min_date_limit.year, self.min_date_limit.month + 1, self.min_date_limit.day), datetime.datetime(2017, 12, 31))
+        self.date_field2.SetRange(datetime.datetime(self.min_date_limit.year, self.min_date_limit.month + 1, self.min_date_limit.day), datetime.datetime(2017, 8, 27))
         self.date_field2.Enable()
 
     def OnDateSelected(self, e):
@@ -218,7 +220,22 @@ class HomePage(wx.Panel):
             wx.MessageBox('Please choose a valid date range', 'Info', wx.OK | wx.ICON_INFORMATION)
 
     def get_col_choices(self, excluded_list, all_column_names):
+        """
+        This method will get all the valid choices that should appear in the select field in the home page.
 
+        Parameters
+        ----------
+           excluded list: list / array
+                This parameter will contain the list of columns that should not appear in the select field
+
+            all_column_names: list / array
+                This parameter contains the list of all the column names in the CSV file that is loaded
+
+        Returns
+        -------
+            col_choices: list / array
+                This contains a list of column names that should appear on the select field.
+        """
         col_list = set(all_column_names)
         exclusion_set = set(excluded_list)
         col_choices = sorted(list(col_list - exclusion_set))
@@ -226,7 +243,21 @@ class HomePage(wx.Panel):
         return col_choices
 
     def check_column_name(self, column_name, valid_col_choices):
+        """
+        This method will check if the column name chosen by the user is a valid choice.
 
+        Parameters
+        ----------
+            column_name: string
+                This param contains the column name chosen by the user
+            valid_col_choices: list / array
+                This param contains the list of columns that are valid
+
+        Returns
+        --------
+            bool
+                This method returns a boolean value
+        """
         return column_name in valid_col_choices
 
     def OnColSelect(self, event):
@@ -274,7 +305,7 @@ class HomePage(wx.Panel):
                 temp_df = self.df_1.fillna('').copy()
             else:
                 temp_df = self.df.fillna('').copy()
-            temp_df = temp_df[temp_df[str(self.chosen_col)].str.contains(self.keyword, case = False)]
+            temp_df = temp_df[temp_df[str(self.chosen_col)].str.contains(r'(?:\s|^)'+self.keyword+'(?:,\s|$)', case = False)]
             if len(temp_df) > 0:
                 self.SetDataTable(temp_df)
             else:
