@@ -48,3 +48,4 @@ class Test_dashboard:
     @pytest.mark.parametrize("evnt", [wx.EVT_BUTTON])
     def test_OnViewAll(self, my_dashboard, evnt):
         my_dashboard.viewall_btn.Bind(evnt, my_dashboard.OnViewAll)
+        assert True

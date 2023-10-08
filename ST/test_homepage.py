@@ -26,7 +26,6 @@ class Test_homepage:
             for x in df.columns:
                 if x not in excl:
                     ls.append(x)
-            print(ls)
             output =  choices.sort() == ls.sort()
         except:
             output = False
@@ -42,7 +41,6 @@ class Test_homepage:
     col_list = [('BORO',['CAMIS', 'BUILDING', 'ZIPCODE', 'PHONE', 'INSPECTION DATE', 'SCORE', 'GRADE',
                  'GRADE DATE', 'RECORD DATE', 'BORO']), ('NOT THERE',['CAMIS', 'BUILDING', 'ZIPCODE', 'PHONE', 'INSPECTION DATE', 'SCORE', 'GRADE',
                  'GRADE DATE', 'RECORD DATE'])]
-
     @pytest.mark.parametrize("val, colList", col_list)
     def test_check_column_name(self, my_homepage, val, colList):
         out = False

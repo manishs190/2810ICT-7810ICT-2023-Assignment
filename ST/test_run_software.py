@@ -22,18 +22,3 @@ class Test_Visualize:
         assert True
 
 
-'''class Test_ViewDetailChart:
-
-    @pytest.fixture
-    def my_ViewDetailChart(self):
-        app = wx.App(0)
-        frame = wx.Frame(None)
-        return ViewDetailChart(wx.Frame(None))
-
-    def test_my_ViewDetailChart(self, my_ViewDetailChart):
-        try:
-            my_ViewDetailChart.()
-            assert True
-        except:
-            assert False '''
-
