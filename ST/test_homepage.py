@@ -1,5 +1,6 @@
 import pytest
 from homepage import HomePage
+from homepage import DataTable
 import wx
 import pandas as pd
 from common import load_file
@@ -31,9 +32,10 @@ class Test_homepage:
             output = False
         assert output
 
-    def test_OnExportToCSV(self, my_homepage):
-        filter_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        my_homepage.export_btn.Bind(wx.EVT_BUTTON, my_homepage.OnExportToCSV)
+    lst = [wx.EVT_BUTTON]
+    @pytest.mark.parametrize("excl", lst)
+    def test_OnExportToCSV(self, my_homepage, excl):
+        my_homepage.export_btn.Bind(excl, my_homepage.OnExportToCSV)
         out = load_file("output.csv")
         assert isinstance(out, object)
 
@@ -50,7 +52,37 @@ class Test_homepage:
             out = True
         assert out
 
+    @pytest.mark.parametrize("dataFrame", [load_file("output.csv")])
+    def test_SetDataTable(self,my_homepage, dataFrame):
+        my_homepage.SetDataTable(dataFrame)
+        assert True
 
+    @pytest.fixture
+    def my_DataTable(self):
+        return DataTable(load_file("output.csv"))
+
+    def test_GetNumberRows(self, my_DataTable):
+        rows = my_DataTable.GetNumberRows()
+        assert rows > 0 and rows == 399918
+
+    def test_GetNumberCols(self, my_DataTable):
+        cols = my_DataTable.GetNumberCols()
+        assert cols > 0 and cols == 18
+
+    @pytest.mark.parametrize("row, col", [(23, 16)])
+    def test_GetValue(self, my_DataTable, row, col):
+        da = my_DataTable.GetValue(row, col)
+        assert da != None and isinstance(da, object)
+
+    @pytest.mark.parametrize("col", [0])
+    def test_GetColLabelValue(self,my_DataTable, col):
+        dat = my_DataTable.GetColLabelValue(col)
+        assert dat !=None and dat == 'CAMIS'
+
+    @pytest.mark.parametrize("col", [16])
+    def test_GetAttr(self, my_DataTable, col):
+        attr = my_DataTable.GetColLabelValue(col)
+        assert attr !=None and attr == 'RECORD DATE'
 
 
 

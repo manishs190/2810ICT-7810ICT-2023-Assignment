@@ -2,7 +2,7 @@ import pytest
 import wx
 from run_software import *
 from dashboard import Dashboard
-
+from viewdetail import *
 
 class Test_dashboard:
 
@@ -31,3 +31,20 @@ class Test_dashboard:
         ani = my_dashboard.get_unique_col_values(my_dashboard.df, 'INSPECTION DATE')
         assert my_dashboard.df['INSPECTION DATE'].unique().all() == ani.all()
 
+    def test_OnDateSelected(self, my_dashboard):
+        try:
+            my_dashboard.Bind(wx.EVT_BUTTON, my_dashboard.OnDateSelected)
+            assert True
+        except:
+            assert False
+
+    def test_OnFromDateSelected(self, my_dashboard):
+        try:
+            my_dashboard.date_field1.Bind(wx.adv.EVT_DATE_CHANGED, my_dashboard.OnFromDateSelected)
+            assert True
+        except:
+            assert False
+
+    @pytest.mark.parametrize("evnt", [wx.EVT_BUTTON])
+    def test_OnViewAll(self, my_dashboard, evnt):
+        my_dashboard.viewall_btn.Bind(evnt, my_dashboard.OnViewAll)
