@@ -65,8 +65,7 @@ class Dashboard(wx.Panel):
         filter_sizer.Add(self.from_text, 0, wx.TOP | wx.BOTTOM, 15)
 
         self.date_field1 = wx.adv.DatePickerCtrl(self, style=wx.adv.DP_DROPDOWN)
-        # self.date_field1.SetRange(datetime.datetime(1900, 1, 1), datetime.datetime(2017, 12, 31))
-        # self.date_field1 = set_from_date(self)
+        # set the date range
         date_range = get_date_range()
         valid_range = check_date_range(date_range)
         if valid_range:
@@ -104,7 +103,7 @@ class Dashboard(wx.Panel):
         self.figure_score = self.plot_data()
         # canvas for plotting the charts
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure_score)
-        self.canvas.SetSize(parent.GetSize())
+        self.canvas.SetSize(size)
         self.canvas.draw()
 
         self.main_dash.Add(self.canvas, 1, wx.LEFT | wx.RIGHT | wx.GROW , 20)
@@ -124,66 +123,34 @@ class Dashboard(wx.Panel):
             figure_score
                 This will a figure containing all the plots
         """
-        self.figure_score, ((self.ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2, constrained_layout = True)
+        self.figure_score, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = plt.subplots(nrows=2, ncols=2, constrained_layout = True)
 
         # Plot 1
         # data grouped according to suburbs and counted based on violation code
-        self.grouped_suburb_df = pd.DataFrame(self.df.groupby("BORO")['VIOLATION CODE'].count())
-        self.grouped_suburb = self.grouped_suburb_df.unstack()
-
-        self.unique_suburb = self.df['BORO'].unique()
-        self.unique_suburb.sort()
-        pie_color_list = ["#1a53ff", "#0d88e6", "#00b7c7", "#5ad45a", "#8be04e", "#ebdc78"]
-        self.ax1.pie(self.grouped_suburb['VIOLATION CODE'].values, labels = self.unique_suburb, colors = pie_color_list, radius = 2)
-        self.ax1.set_title(u'Violation Distribution over Suburbs', loc = 'right')
+        self.grouped_suburb_df = self.groupby_single_column(self.df, 'BORO', 'VIOLATION CODE')
+        self.plot_pie(self.grouped_suburb_df, 'VIOLATION CODE')
 
         # Plot 2
         # data grouped based on cuisine and counted is generated on violation code
-        self.grouped_cuisine_df = pd.DataFrame(self.df.groupby("CUISINE DESCRIPTION")['VIOLATION CODE'].count())
-        self.grouped_cuisine = self.grouped_cuisine_df.unstack()
+        self.grouped_cuisine = self.groupby_single_column(self.df, 'CUISINE DESCRIPTION', 'VIOLATION CODE')
         short_df = self.grouped_cuisine.head(10)
-
-        ax2.bar(short_df['VIOLATION CODE'].keys(), short_df['VIOLATION CODE'].values)
-        ax2.set_title(u'Violation count per cuisine')
-        ax2.set_xlabel('Cuisine Description', labelpad=10, fontsize=9)
-        ax2.set_ylabel('Count of violation', labelpad=10, fontsize=9)
-        ax2.tick_params(axis='x', labelrotation=45)
+        self.plot_bar(short_df, 'VIOLATION CODE')
 
         # Plot 3
         # mapping of violation codes to animals
-        filtered_df = self.df[self.df['VIOLATION CODE'].isin(['04K', '04L', '04M', '04N', '04O'])].copy()
         violation_code_dict = {'04K': 'Rats', '04L': 'Mice', '04M': 'Roach', '04N': 'Flies', '04O': 'Other live animals'}
-        filtered_df['ANIMALS'] = filtered_df['VIOLATION CODE'].map(violation_code_dict)
-
+        filtered_df = self.add_new_col(self.df, violation_code_dict, 'VIOLATION CODE', 'ANIMALS').copy()
         filtered_df['INSPECTION DATE'] = pd.to_datetime(filtered_df['INSPECTION DATE'])
 
         # group the data by year
-        self.grouped_animals_df = pd.DataFrame(filtered_df.groupby(['ANIMALS', filtered_df['INSPECTION DATE']])['INSPECTION DATE'].count())
-        self.grouped_animals = self.grouped_animals_df.unstack()
-        self.unique_animals = filtered_df['ANIMALS'].unique()
-
-        self.grouped_date_df = pd.DataFrame(filtered_df.groupby([filtered_df['INSPECTION DATE'].dt.year, 'ANIMALS'])['ANIMALS'].count())
-        self.grouped_date = self.grouped_date_df.unstack()
-        self.unique_dates = filtered_df['INSPECTION DATE'].dt.year.unique()
-        self.unique_dates.sort()
-
-        # color_list = [ "#0060ff", "#0080ff", "#009fff", "#00bfff", "#00ffff"]
-        # for index in range(len(self.grouped_animals)):
-        #     ax3.plot(self.unique_dates, self.grouped_animals.iloc[index].fillna(0).to_numpy(),'o-.', color = color_list[index])
-        # ax3.legend(self.unique_animals, prop = { "size": 6 }, title = 'Animals')
-        # ax3.set_title(u'Distribution of violation related to animals over time period')
-        # ax3.set_xlabel('Year')
-        # ax3.set_ylabel('Count of violation')
+        self.grouped_animals = self.groupby_double_column(filtered_df, 'ANIMALS', 'INSPECTION DATE')
+        self.ax3.cla()
+        self.plot_line(self.grouped_animals, filtered_df)
 
         # Plot 4
         # data is grouped based on suburbs and counted is generated based animals
-        self.grouped_suburbs_df = pd.DataFrame(filtered_df.groupby(['BORO', 'ANIMALS'])['ANIMALS'].count())
-        self.grouped_suburbs = self.grouped_suburbs_df.unstack()
-
-        bar_color_list = ["#363445", "#48446e", "#5e569b", "#776bcd", "#9080ff"]
-        self.grouped_suburbs.plot.bar(stacked=True, ax = ax4, color = bar_color_list, title = 'Violation related to animals over suburbs')
-        ax4.legend(self.unique_animals, prop = { "size": 6 }, title = 'Animals')
-        ax4.set_xticklabels(labels = self.grouped_suburbs.reset_index()['BORO'], rotation = 0)
+        self.grouped_suburbs = self.groupby_double_column(filtered_df, 'BORO', 'ANIMALS')
+        self.plot_stakced_bar(self.grouped_suburbs, filtered_df)
 
         return self.figure_score
 
@@ -222,20 +189,20 @@ class Dashboard(wx.Panel):
         self.min_date_limit = self.date_field1.GetValue()
         self.max_date_limit = self.date_field2.GetValue()
 
-        # the pandas serie is converted to datetime
-        self.datetime_converted_1 = pd.to_datetime(self.df['INSPECTION DATE'], infer_datetime_format=True)
-        self.filtered_df_pie = df[self.datetime_converted_1 >= datetime.datetime(self.min_date_limit.year, self.min_date_limit.month + 1, self.min_date_limit.day)]
+        # the pandas series is converted to datetime
+        self.filtered_dates_df = filter_data('INSPECTION DATE', self.df, self.min_date_limit, self.max_date_limit)
+        self.filtered_suburb = self.groupby_single_column(self.filtered_dates_df, 'BORO', 'VIOLATION CODE')
 
-        self.datetime_converted_2 = pd.to_datetime(self.filtered_df_pie['INSPECTION DATE'], infer_datetime_format=True)
-        self.filtered_df_pie = self.filtered_df_pie[self.datetime_converted_2 <= datetime.datetime(self.max_date_limit.year, self.max_date_limit.month + 1, self.max_date_limit.day)]
-
-        self.filtered_suburb_df = pd.DataFrame(self.filtered_df_pie.groupby("BORO")['VIOLATION CODE'].count())
-        self.filtered_suburb = self.filtered_suburb_df.unstack()
+        violation_code_dict = {'04K': 'Rats', '04L': 'Mice', '04M': 'Roach', '04N': 'Flies', '04O': 'Other live animals'}
+        filtered_df_line = self.add_new_col(self.filtered_dates_df, violation_code_dict, 'VIOLATION CODE', 'ANIMALS').copy()
+        self.filtered_animals_df = pd.DataFrame(filtered_df_line.groupby(['ANIMALS', pd.to_datetime(filtered_df_line['INSPECTION DATE']).dt.month])['INSPECTION DATE'].count())
+        self.filtered_animals = self.filtered_animals_df.unstack()
 
         if len(self.filtered_suburb) > 0:
-            pie_color_list = ["#1a53ff", "#0d88e6", "#00b7c7", "#5ad45a", "#8be04e", "#ebdc78"]
-            self.ax1.pie(self.filtered_suburb['VIOLATION CODE'].values, colors=pie_color_list, radius=2)
-            self.ax1.set_title(u'Violation Distribution over Suburbs', loc='right')
+            self.ax1.cla()
+            self.plot_pie(self.filtered_suburb, 'VIOLATION CODE')
+            self.ax3.cla()
+            self.plot_line(self.filtered_animals, filtered_df_line)
 
             self.canvas.draw()
             self.main_dash.Detach(self.canvas)
@@ -243,6 +210,64 @@ class Dashboard(wx.Panel):
             self.SetSizer(self.main_dash)
         else:
             wx.MessageBox('No data available for the selected date range', 'Info', wx.OK | wx.ICON_INFORMATION)
+
+    def groupby_single_column(self, data, grouping_col_name, counting_col_name):
+
+        grouped_df = pd.DataFrame(data.groupby(grouping_col_name)[counting_col_name].count())
+        grouped_df = grouped_df.unstack()
+
+        return grouped_df
+
+    def groupby_double_column(self, data, col_1, col_2):
+        double_grouped_df = pd.DataFrame(data.groupby([col_1, col_2])[col_2].count())
+        double_grouped_df = double_grouped_df.unstack()
+
+        return double_grouped_df
+
+    def plot_pie(self, grouped_data, index):
+        pie_color_list = ["#1a53ff", "#0d88e6", "#00b7c7", "#5ad45a", "#8be04e", "#ebdc78"]
+        self.ax1.pie(grouped_data[index].values, labels = grouped_data[index].keys(), colors=pie_color_list, radius=2)
+        self.ax1.set_title(u'Violation Distribution over Suburbs', loc='right')
+
+        return self.ax1
+
+    def plot_bar(self, data, col_name):
+
+        self.ax2.bar(data[col_name].keys(), data[col_name].values)
+        self.ax2.set_title(u'Violation count per cuisine')
+        self.ax2.set_xlabel('Cuisine Description', labelpad=10, fontsize=9)
+        self.ax2.set_ylabel('Count of violation', labelpad=10, fontsize=9)
+        self.ax2.tick_params(axis='x', labelrotation=45)
+
+        return self.ax2
+    def plot_line(self, data, data1):
+        color_list = ["#0060ff", "#0080ff", "#009fff", "#00bfff", "#00ffff"]
+        for index in range(len(data)):
+            self.ax3.plot(data.iloc[index]['INSPECTION DATE'].keys(), data.iloc[index]['INSPECTION DATE'].fillna(0).to_numpy(), color=color_list[index])
+        self.ax3.legend(self.get_unique_col_values(data1, 'ANIMALS'), prop={"size": 6}, title='Animals')
+        self.ax3.set_title(u'Distribution of violation related to animals over time period')
+        self.ax3.set_xlabel('Year')
+        self.ax3.set_ylabel('Count of violation')
+
+        return self.ax3
+    def plot_stakced_bar(self, data, data1):
+        bar_color_list = ["#363445", "#48446e", "#5e569b", "#776bcd", "#9080ff"]
+        data.plot.bar(stacked=True, ax=self.ax4, color=bar_color_list, title='Violation related to animals over suburbs')
+        self.ax4.legend(self.get_unique_col_values(data1, 'ANIMALS'), prop={"size": 6}, title='Animals')
+        self.ax4.set_xticklabels(labels=self.grouped_suburbs.reset_index()['BORO'], rotation=0)
+
+        return self.ax4
+
+    def get_unique_col_values(self, data, col_name):
+        unique_values = data[col_name].unique()
+
+        return unique_values
+
+    def add_new_col(self, data, mapping_dict, col_name, new_col_name):
+        mapped_df = data[data[col_name].isin(['04K', '04L', '04M', '04N', '04O'])].copy()
+        mapped_df[new_col_name] = mapped_df[col_name].map(mapping_dict)
+
+        return mapped_df
 
     def OnViewAll(self, e):
         """

@@ -67,6 +67,8 @@ class ViewDetailChart(wx.Frame):
         axes.set_ylabel('Count of Violation', fontsize=10)
         axes.tick_params(axis='x', labelrotation=90)
 
+
+
         # canvas to add the plot
         self.new_canvas = FigureCanvasWxAgg(self, -1, self.new_figure_score)
         self.new_canvas.draw()

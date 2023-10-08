@@ -208,11 +208,7 @@ class HomePage(wx.Panel):
 
         if valid_range:
             # the pandas series is converted to datetime
-            self.datetime_converted_1 = pd.to_datetime(self.df['INSPECTION DATE'], infer_datetime_format=True)
-            self.df_1 = self.df[self.datetime_converted_1 >= datetime.datetime(self.min_date_limit.year, self.min_date_limit.month + 1, self.min_date_limit.day)]
-
-            self.datetime_converted_2 = pd.to_datetime(self.df_1['INSPECTION DATE'], infer_datetime_format=True)
-            self.df_1 = self.df_1[self.datetime_converted_2 <= datetime.datetime(self.max_date_limit.year, self.max_date_limit.month + 1, self.max_date_limit.day)]
+            self.df_1 = filter_data('INSPECTION DATE', self.df, self.min_date_limit, self.max_date_limit)
 
             if len(self.df_1) > 0:
                 self.SetDataTable(self.df_1)
